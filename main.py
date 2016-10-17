@@ -12,6 +12,7 @@ import os, logging
 openssl_include = ur"S:\WPS\wpsenv\3rdparty\openssl\include"
 
 def main(srcPath):
+    init_logging()
     logging.info(u"工具开始运行....")
 
     handlers = []
@@ -20,7 +21,7 @@ def main(srcPath):
 
     vcxProjs = getVcxProjs(srcPath)
     for vcxProj in vcxProjs:
-        setVcxProj(progFile, handlers)
+        setVcxProj(vcxProj, handlers)
 
     logging.info(u"工具运行结束!")
     
@@ -53,17 +54,25 @@ def setVcxProj(progFile, handlers):
     logging.info(u"开始处理项目文件:[%s]..." % progFile)
     new_content = []
 
-    with open(progFile, 'rw') as fileobj:
+    with open(progFile, 'r') as fileobj:
         lines = fileobj.readlines()
         for line in lines:
             if line == "":
                 continue
 
+            new_line = None
             for handler in handlers:
-                new_content.append(handler(line))
+                new_line = handler(line)
+                if new_line != None:
+                    break
 
+            if new_line == None:
+                new_line = line.replace('\n', '')
+            new_content.append(new_line)
+
+    with open(progFile, 'w+') as fileobj:
+        new_content = [item + '\n' for item in new_content]
         fileobj.writelines(new_content)
-
     pass
 
 def handle_platformset(line):
@@ -76,10 +85,9 @@ def handle_includedirset(line):
     if line.find("<AdditionalIncludeDirectories>") == -1:
         return
 
-    content = line.replace("<AdditionalIncludeDirectories>", ""). \
+    content = line.replace("\n", "").replace("<AdditionalIncludeDirectories>", "").\
                     replace("</AdditionalIncludeDirectories>", "")
     content = content + ";" + openssl_include
-
     return "<AdditionalIncludeDirectories>%s</AdditionalIncludeDirectories>" % content
 
 if __name__ == '__main__':
