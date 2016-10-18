@@ -9,7 +9,7 @@
 
 import os, logging
 
-openssl_include = ur"S:\WPS\wpsenv\3rdparty\openssl\include"
+openssl_include = ur"S:\workdir\zc-deploy\references\netxms\openssl-OpenSSL_1_0_2e\release\include"
 
 def main(srcPath):
     init_logging()
@@ -18,6 +18,7 @@ def main(srcPath):
     handlers = []
     handlers.append(handle_includedirset)
     handlers.append(handle_platformset)
+    handlers.append(handle_dependences)
 
     vcxProjs = getVcxProjs(srcPath)
     for vcxProj in vcxProjs:
@@ -87,8 +88,18 @@ def handle_includedirset(line):
 
     content = line.replace("\n", "").replace("<AdditionalIncludeDirectories>", "").\
                     replace("</AdditionalIncludeDirectories>", "")
-    content = content + ";" + openssl_include
+    content = content.strip() + ";" + openssl_include + r";S:\workdir\zc-deploy\references\netxms\zlib-1.2.8"
     return "<AdditionalIncludeDirectories>%s</AdditionalIncludeDirectories>" % content
+
+def handle_dependences(line):
+    if line.find("<AdditionalDependencies>") == -1:
+        return
+
+    content = line.replace("\n", "").replace("<AdditionalDependencies>", "").replace("</AdditionalDependencies>", "").strip()
+    content = content.replace("ssleay32.lib", r"S:\workdir\zc-deploy\references\netxms\openssl-OpenSSL_1_0_2e\release\lib\ssleay32.lib")
+    content = content.replace("libeay32.lib", r"S:\workdir\zc-deploy\references\netxms\openssl-OpenSSL_1_0_2e\release\lib\libeay32.lib")
+
+    return "<AdditionalDependencies>%s</AdditionalDependencies>" % content
 
 if __name__ == '__main__':
     srcPath = r"S:\workdir\zc-deploy\references\netxms\netxms-2.1-M1\src"
